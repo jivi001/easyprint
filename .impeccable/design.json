@@ -1,0 +1,173 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-11T21:20:00Z",
+  "title": "Design System: PrintEasy",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Atelier Blue",
+        "canonical": "#0071E3",
+        "tonalRamp": ["#002B5C", "#004085", "#005BB5", "#0071E3", "#3392EC", "#66B2F4", "#B3D8FA", "#EBF5FF"]
+      },
+      "primary-hover": {
+        "role": "primary",
+        "displayName": "Atelier Blue Hover",
+        "canonical": "#0077ED",
+        "tonalRamp": ["#002F60", "#00458C", "#0060C3", "#0077ED", "#3894F1", "#70B4F6", "#B8DBFA", "#EEF6FF"]
+      },
+      "primary-pressed": {
+        "role": "primary",
+        "displayName": "Atelier Blue Pressed",
+        "canonical": "#006EDB",
+        "tonalRamp": ["#002958", "#003E7E", "#0057B0", "#006EDB", "#2E8FEA", "#61AFFE", "#B0D6F9", "#EBF5FE"]
+      },
+      "bg": {
+        "role": "neutral",
+        "displayName": "Canvas Tint",
+        "canonical": "#F5F5F7",
+        "tonalRamp": ["#2C2C2E", "#48484A", "#636366", "#8E8E93", "#AEAEB2", "#C7C7CC", "#E5E5EA", "#F5F5F7"]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Pure Surface",
+        "canonical": "#FFFFFF",
+        "tonalRamp": ["#3A3A3C", "#545456", "#6E6E73", "#8E8E93", "#AEAEB2", "#D1D1D6", "#F2F2F7", "#FFFFFF"]
+      },
+      "surface-secondary": {
+        "role": "neutral",
+        "displayName": "Secondary Surface",
+        "canonical": "#F2F2F4",
+        "tonalRamp": ["#2C2C2E", "#48484A", "#636366", "#8E8E93", "#AEAEB2", "#C7C7CC", "#E5E5EA", "#F2F2F4"]
+      },
+      "text-primary": {
+        "role": "neutral",
+        "displayName": "System Black",
+        "canonical": "#1D1D1F",
+        "tonalRamp": ["#1D1D1F", "#3A3A3C", "#545456", "#6E6E73", "#8E8E93", "#AEAEB2", "#D1D1D6", "#F2F2F7"]
+      },
+      "text-secondary": {
+        "role": "neutral",
+        "displayName": "System Gray",
+        "canonical": "#6E6E73",
+        "tonalRamp": ["#1D1D1F", "#3A3A3C", "#545456", "#6E6E73", "#8E8E93", "#AEAEB2", "#D1D1D6", "#F2F2F7"]
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "Hairline Border",
+        "canonical": "#D2D2D7",
+        "tonalRamp": ["#48484A", "#636366", "#8E8E93", "#AEAEB2", "#C7C7CC", "#D2D2D7", "#E5E5EA", "#F5F5F7"]
+      },
+      "success": {
+        "role": "semantic",
+        "displayName": "Success Forest",
+        "canonical": "#248A3D",
+        "tonalRamp": ["#0C3814", "#13541E", "#1B7029", "#248A3D", "#4BB064", "#77CD8C", "#B8ECC4", "#EBF7EE"]
+      },
+      "warning": {
+        "role": "semantic",
+        "displayName": "Attention Amber",
+        "canonical": "#9A6700",
+        "tonalRamp": ["#3D2900", "#5C3E00", "#7B5200", "#9A6700", "#C28500", "#E0A31A", "#F7CF73", "#FFF8E6"]
+      },
+      "danger": {
+        "role": "semantic",
+        "displayName": "System Red",
+        "canonical": "#D70015",
+        "tonalRamp": ["#5A0008", "#82000C", "#AB0010", "#D70015", "#E83A4A", "#F47582", "#F9B6BD", "#FDEBED"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Hero greetings and landing headlines." },
+      "headline": { "displayName": "Headline", "purpose": "Section headings and portal view titles." },
+      "title": { "displayName": "Title", "purpose": "Card titles and group headers." },
+      "body": { "displayName": "Body", "purpose": "Main content text, form values, and table cells." },
+      "label": { "displayName": "Label", "purpose": "Button labels, badge text, and captions." }
+    },
+    "shadows": [
+      { "name": "card", "value": "0 2px 12px rgba(0, 0, 0, 0.04)", "purpose": "Grounded ambient shadow for cards." },
+      { "name": "popover", "value": "0 12px 32px rgba(0, 0, 0, 0.12)", "purpose": "Elevation for dialogs, dropdowns, and overlays." }
+    ],
+    "motion": [
+      { "name": "ease-standard", "value": "cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Subtle, rapid state transitions (120ms-200ms)." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "max", "value": "1200px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Primary action button for submit and progress actions.",
+      "html": "<button class=\"ds-btn-primary\">Submit Print Request</button>",
+      "css": ".ds-btn-primary { background: #0071E3; color: #FFFFFF; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; font-size: 14px; font-weight: 500; padding: 10px 18px; border: none; border-radius: 10px; cursor: pointer; transition: background 0.15s ease, transform 0.1s ease; outline: none; } .ds-btn-primary:hover { background: #0077ED; } .ds-btn-primary:active { background: #006EDB; transform: scale(0.98); } .ds-btn-primary:focus-visible { box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.35); }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Neutral utility and cancel actions.",
+      "html": "<button class=\"ds-btn-secondary\">Cancel</button>",
+      "css": ".ds-btn-secondary { background: #FFFFFF; color: #1D1D1F; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; font-size: 14px; font-weight: 500; padding: 10px 18px; border: 1px solid #D2D2D7; border-radius: 10px; cursor: pointer; transition: background 0.15s ease; outline: none; } .ds-btn-secondary:hover { background: #F5F5F7; } .ds-btn-secondary:focus-visible { box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.35); }"
+    },
+    {
+      "name": "Status Badge",
+      "kind": "chip",
+      "refersTo": "badge",
+      "description": "Semantic pill badge with dot and text.",
+      "html": "<span class=\"ds-badge ds-badge-ready\"><span class=\"ds-dot\"></span>Ready for pickup</span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; gap: 6px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; font-size: 12px; font-weight: 500; padding: 4px 10px; border-radius: 999px; } .ds-dot { width: 6px; height: 6px; border-radius: 50%; } .ds-badge-ready { background: #EBF7EE; color: #248A3D; } .ds-badge-ready .ds-dot { background: #248A3D; }"
+    },
+    {
+      "name": "Surface Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Standard panel container.",
+      "html": "<div class=\"ds-card\"><h3 class=\"ds-card-title\">Queue Summary</h3><p class=\"ds-card-body\">Review submitted PDF jobs.</p></div>",
+      "css": ".ds-card { background: #FFFFFF; border: 1px solid #D2D2D7; border-radius: 14px; padding: 24px; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04); font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; } .ds-card-title { font-size: 18px; font-weight: 600; color: #1D1D1F; margin: 0 0 8px 0; } .ds-card-body { font-size: 14px; color: #6E6E73; margin: 0; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Academic Atelier",
+    "overview": "PrintEasy is an Apple HIG-inspired, institutional printing management interface designed for clarity, quiet confidence, and operational speed. It strips away visual noise—eliminating decorative gradients, arbitrary drop shadows, and unanchored accent colors—to focus entirely on document preparation and status certainty.",
+    "keyCharacteristics": [
+      "Restrained Single-Accent System: #0071E3 is reserved for interactive affordances.",
+      "Structural Elevation: Depth is communicated via 1px hairline dividers (#D2D2D7) and neutral surfaces (#FFFFFF on #F5F5F7).",
+      "Micro-Hierarchy: Tabular numerals prevent jitter during operational queue refreshes."
+    ],
+    "rules": [
+      {
+        "name": "The Single Accent Rule",
+        "body": "The primary blue accent (#0071E3) must never appear on more than two focal points simultaneously on any screen.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tabular Numerals Rule",
+        "body": "All counters, copy quantities, page ranges, queue timestamps, and file sizes must declare tabular-nums.",
+        "section": "typography"
+      },
+      {
+        "name": "The Hairline Primacy Rule",
+        "body": "Depth is created first by the 1px #D2D2D7 border. Shadows serve only as secondary ambient grounding; they are never colored.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do wrap every number, price, date, and page count in tabular-nums.",
+      "Do use sentence case on all labels, badges, and headings.",
+      "Do maintain a strict 44px touch target on all staff workstation actions.",
+      "Do constrain desktop views to max-w-[1200px]."
+    ],
+    "donts": [
+      "Don't introduce third-party accent colors such as Tailwind purples, oranges, or magentas.",
+      "Don't use colored glow shadows (e.g. shadow-blue-500/20).",
+      "Don't use uppercase on badges or labels.",
+      "Don't communicate state through color alone."
+    ]
+  }
+}

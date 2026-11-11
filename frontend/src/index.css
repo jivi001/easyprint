@@ -1,0 +1,152 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+    --pe-bg: #F5F5F7;
+    --pe-surface: #FFFFFF;
+    --pe-surface-secondary: #F2F2F4;
+    --pe-text: #1D1D1F;
+    --pe-text-secondary: #6E6E73;
+    --pe-border: #D2D2D7;
+    --pe-border-subtle: #E5E5EA;
+
+    --pe-accent: #0071E3;
+    --pe-accent-hover: #0077ED;
+    --pe-accent-pressed: #006EDB;
+    --pe-focus: #0071E3;
+
+    --pe-success: #248A3D;
+    --pe-success-surface: #EBF7EE;
+    --pe-warning: #9A6700;
+    --pe-warning-surface: #FFF8E6;
+    --pe-danger: #D70015;
+    --pe-danger-surface: #FDEBED;
+
+    --pe-shadow-card: 0 2px 12px rgba(0, 0, 0, 0.04);
+    --pe-shadow-popover: 0 12px 32px rgba(0, 0, 0, 0.12);
+  }
+
+  [data-theme="dark"] {
+    color-scheme: dark;
+    --pe-bg: #000000;
+    --pe-surface: #1C1C1E;
+    --pe-surface-secondary: #2C2C2E;
+    --pe-text: #F5F5F7;
+    --pe-text-secondary: #A1A1A6;
+    --pe-border: #38383A;
+    --pe-border-subtle: #2C2C2E;
+
+    --pe-accent: #0A84FF;
+    --pe-accent-hover: #3399FF;
+    --pe-accent-pressed: #0071E3;
+    --pe-focus: #0A84FF;
+
+    --pe-success: #30D158;
+    --pe-success-surface: #0A2912;
+    --pe-warning: #FFD60A;
+    --pe-warning-surface: #2E2500;
+    --pe-danger: #FF453A;
+    --pe-danger-surface: #300B09;
+
+    --pe-shadow-card: 0 2px 12px rgba(0, 0, 0, 0.4);
+    --pe-shadow-popover: 0 12px 32px rgba(0, 0, 0, 0.6);
+  }
+
+  body {
+    background-color: var(--pe-bg);
+    color: var(--pe-text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Inter, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    caret-color: var(--pe-accent);
+  }
+
+  /* Progressive text-wrapping per typeset playbook */
+  h1, h2, h3, h4, h5, h6 {
+    text-wrap: balance;
+    letter-spacing: -0.015em;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  /* Browser surface theming */
+  ::selection {
+    background-color: rgba(0, 113, 227, 0.2);
+    color: var(--pe-text);
+  }
+
+  /* Sleek, restrained scrollbars per craft-floor */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--pe-border) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--pe-border);
+    border-radius: 999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--pe-text-secondary);
+  }
+
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  button:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.25);
+  }
+
+  /* Physical print adaptation */
+  @media print {
+    header,
+    button,
+    input,
+    select,
+    textarea,
+    [data-impeccable-toolbar],
+    .no-print {
+      display: none !important;
+    }
+
+    body {
+      background: #FFFFFF !important;
+      color: #1D1D1F !important;
+      font-size: 12pt;
+    }
+
+    .bg-pe-surface,
+    .bg-pe-surface-secondary {
+      background: transparent !important;
+      border: 1px solid #D2D2D7 !important;
+      box-shadow: none !important;
+      page-break-inside: avoid;
+    }
+
+    table {
+      width: 100% !important;
+      border-collapse: collapse !important;
+    }
+
+    th, td {
+      border: 1px solid #D2D2D7 !important;
+      padding: 6pt !important;
+    }
+  }
+}

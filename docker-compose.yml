@@ -1,0 +1,78 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: printeasy-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-printeasy}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-printeasy_secure_pass_123}
+      POSTGRES_DB: ${POSTGRES_DB:-printeasy}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - internal_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: printeasy-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-printeasy}:${POSTGRES_PASSWORD:-printeasy_secure_pass_123}@postgres:5432/${POSTGRES_DB:-printeasy}
+      SECRET_KEY: ${SECRET_KEY:-printeasy_super_secret_jwt_key_2026_xyz_production}
+      ACCESS_TOKEN_EXPIRE_MINUTES: 60
+      STORAGE_DIR: /app/storage/private
+      MAX_FILE_SIZE_BYTES: 10485760
+    volumes:
+      - document_storage:/app/storage/private
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - internal_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: printeasy-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    networks:
+      - internal_network
+
+  nginx:
+    image: nginx:alpine
+    container_name: printeasy-gateway
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - internal_network
+
+networks:
+  internal_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  document_storage:

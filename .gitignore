@@ -1,0 +1,63 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+.venv/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Testing & Cache
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node & Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+*.log
+
+# Databases & Private Local Storage
+*.db
+*.sqlite3
+storage/private/*
+!storage/private/.gitkeep
+backend/storage/private/*
+!backend/storage/private/.gitkeep
+printeasy_test_storage/
+
+# Impeccable Local Developer Overrides & Sessions
+.impeccable/config.local.json
+.impeccable/live/sessions/
+.impeccable/hook.cache.json
+frontend/.impeccable/config.local.json
+frontend/.impeccable/live/sessions/
+frontend/.impeccable/hook.cache.json
+
+# Environment variables & secrets
+.env
+.env.local
+.env.*.local
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
