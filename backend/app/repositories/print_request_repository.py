@@ -19,7 +19,8 @@ class PrintRequestRepository(BaseRepository[PrintRequest]):
                 joinedload(PrintRequest.student),
                 joinedload(PrintRequest.document),
                 joinedload(PrintRequest.settings),
-                joinedload(PrintRequest.status_history)
+                joinedload(PrintRequest.status_history),
+                joinedload(PrintRequest.payment)
             )
             .filter(PrintRequest.id == request_id)
             .first()
@@ -45,7 +46,8 @@ class PrintRequestRepository(BaseRepository[PrintRequest]):
             .options(
                 joinedload(PrintRequest.student),
                 joinedload(PrintRequest.document),
-                joinedload(PrintRequest.settings)
+                joinedload(PrintRequest.settings),
+                joinedload(PrintRequest.payment)
             )
             .filter(PrintRequest.student_id == student_id)
         )
@@ -64,7 +66,8 @@ class PrintRequestRepository(BaseRepository[PrintRequest]):
             .options(
                 joinedload(PrintRequest.student),
                 joinedload(PrintRequest.document),
-                joinedload(PrintRequest.settings)
+                joinedload(PrintRequest.settings),
+                joinedload(PrintRequest.payment)
             )
         )
         if status:

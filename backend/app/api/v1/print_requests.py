@@ -27,6 +27,7 @@ router = APIRouter(prefix="/print-requests", tags=["Print Requests"])
 
 
 def _to_response_dto(req) -> PrintRequestResponse:
+    pay = getattr(req, "payment", None)
     return PrintRequestResponse(
         id=req.id,
         student_id=req.student_id,
@@ -41,7 +42,15 @@ def _to_response_dto(req) -> PrintRequestResponse:
         duplex=req.duplex,
         page_range=req.page_range,
         created_at=req.created_at,
-        updated_at=req.updated_at
+        updated_at=req.updated_at,
+        payment_status=pay.status.value if pay else "UNPAID",
+        total_amount=pay.amount if pay else 0.0,
+        currency=pay.currency if pay else "USD",
+        rate_per_page=pay.rate_per_page if pay else (0.50 if req.color_mode == "color" else 0.10),
+        total_pages=pay.total_pages if pay else req.copies,
+        payment_method=pay.payment_method if pay else None,
+        transaction_id=pay.transaction_id if pay else None,
+        paid_at=pay.paid_at if pay else None,
     )
 
 

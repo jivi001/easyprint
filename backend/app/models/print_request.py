@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from app.models.print_settings import PrintSettings
     from app.models.status_history import StatusHistory
     from app.models.notification import Notification
+    from app.models.payment import Payment
 
 
 class RequestStatus(str, enum.Enum):
@@ -97,5 +98,11 @@ class PrintRequest(Base, TimestampMixin):
     notifications: Mapped[List["Notification"]] = relationship(
         "Notification",
         back_populates="request",
+        cascade="all, delete-orphan"
+    )
+    payment: Mapped[Optional["Payment"]] = relationship(
+        "Payment",
+        back_populates="request",
+        uselist=False,
         cascade="all, delete-orphan"
     )

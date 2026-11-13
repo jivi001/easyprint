@@ -10,6 +10,9 @@ import {
   Search,
   CheckCircle2,
   AlertCircle,
+  DollarSign,
+  CreditCard,
+  Coins,
 } from "lucide-react";
 import { api } from "../../services/api";
 import { AdminReport, AuditLogItem, User as UserModel } from "../../types";
@@ -189,6 +192,59 @@ export const AdminPanel: React.FC = () => {
                 {(report.total_storage_bytes / (1024 * 1024)).toFixed(2)} MB
               </p>
               <div className="text-xs text-pe-text-secondary tabular-nums">{report.total_documents_uploaded} files</div>
+            </div>
+          </div>
+
+          {/* Financial & Revenue Settlement Analytics */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-pe-surface p-5 rounded-pe-md border border-pe-border shadow-pe-card space-y-1">
+              <div className="flex items-center justify-between text-pe-text-secondary text-xs">
+                <span className="font-medium">Total Print Revenue</span>
+                <DollarSign className="w-4 h-4 text-[#248A3D]" />
+              </div>
+              <p className="text-2xl font-bold text-pe-text tabular-nums">
+                ${(report.total_revenue || 0).toFixed(2)} <span className="text-xs text-pe-text-secondary font-normal">USD</span>
+              </p>
+              <div className="text-[11px] text-pe-text-secondary">
+                {report.total_paid_requests || 0} jobs settled to staff
+              </div>
+            </div>
+
+            <div className="bg-pe-surface p-5 rounded-pe-md border border-pe-border shadow-pe-card space-y-1">
+              <div className="flex items-center justify-between text-pe-text-secondary text-xs">
+                <span className="font-medium">Payment Settlement Ratio</span>
+                <Coins className="w-4 h-4 text-pe-accent" />
+              </div>
+              <p className="text-2xl font-bold text-pe-text tabular-nums">
+                {report.total_print_requests > 0
+                  ? `${Math.round(((report.total_paid_requests || 0) / report.total_print_requests) * 100)}%`
+                  : "0%"}
+              </p>
+              <div className="text-[11px] text-pe-text-secondary tabular-nums">
+                {report.total_paid_requests || 0} Paid • {report.total_unpaid_requests || 0} Unpaid
+              </div>
+            </div>
+
+            <div className="bg-pe-surface p-5 rounded-pe-md border border-pe-border shadow-pe-card space-y-1">
+              <div className="flex items-center justify-between text-pe-text-secondary text-xs">
+                <span className="font-medium">Settlement Channels</span>
+                <CreditCard className="w-4 h-4 text-pe-accent" />
+              </div>
+              <div className="pt-1 flex items-center gap-2 flex-wrap text-xs text-pe-text tabular-nums">
+                {report.revenue_by_method && Object.keys(report.revenue_by_method).length > 0 ? (
+                  Object.entries(report.revenue_by_method).map(([m, val]) => (
+                    <span
+                      key={m}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 bg-pe-surface-secondary rounded border border-pe-border-subtle"
+                    >
+                      <span className="capitalize font-medium">{m}:</span>
+                      <span>${val.toFixed(2)}</span>
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-xs text-pe-text-secondary italic">No channel transactions yet</span>
+                )}
+              </div>
             </div>
           </div>
 

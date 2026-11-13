@@ -10,10 +10,15 @@ import {
   CheckCircle2,
   Loader2,
   RefreshCw,
+  CreditCard,
+  Receipt,
 } from "lucide-react";
 import { api } from "../../services/api";
 import { DocumentItem, PrintRequest, ColorMode, DuplexMode } from "../../types";
 import { StatusBadge } from "../../components/StatusBadge";
+import { PaymentBadge } from "../../components/PaymentBadge";
+import { PaymentModal } from "../../components/PaymentModal";
+import { PaymentReceiptModal } from "../../components/PaymentReceiptModal";
 
 export const StudentPortal: React.FC = () => {
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
@@ -30,6 +35,10 @@ export const StudentPortal: React.FC = () => {
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  // Payment Modals
+  const [payModalRequest, setPayModalRequest] = useState<PrintRequest | null>(null);
+  const [receiptModalRequestId, setReceiptModalRequestId] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -132,6 +141,26 @@ export const StudentPortal: React.FC = () => {
       setFeedback({ type: "error", message: err.message || "Download failed." });
     }
   };
+
+  // Helper to parse page range for live estimation
+  const getEstimatedPages = (): number => {
+    if (!pageRange || pageRange.trim().toLowerCase() === "all") return 1;
+    const match = pageRange.trim().match(/^(\d+)\s*-\s*(\d+)$/);
+    if (match) {
+      const s = parseInt(match[1]);
+      const e = parseInt(match[2]);
+      if (s <= e) return e - s + 1;
+    }
+    if (pageRange.includes(",")) {
+      const parts = pageRange.split(",").filter((p) => p.trim());
+      if (parts.length > 0) return parts.length;
+    }
+    return 1;
+  };
+
+  const estimatedPages = getEstimatedPages();
+  const ratePerPage = colorMode === "color" ? 0.50 : 0.10;
+  const estimatedTotal = Math.max(0.10, Number((estimatedPages * copies * ratePerPage).toFixed(2)));
 
   return (
     <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-8 space-y-6">
@@ -304,6 +333,27 @@ export const StudentPortal: React.FC = () => {
                 </div>
               </div>
 
+              {/* Live Cost Estimation Card */}
+              <div className="p-3.5 bg-pe-surface-secondary/80 rounded-pe-sm border border-pe-border-subtle space-y-1.5 tabular-nums">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-pe-text flex items-center gap-1.5">
+                    <CreditCard className="w-3.5 h-3.5 text-pe-accent" />
+                    Estimated Cost
+                  </span>
+                  <span className="text-sm font-semibold text-pe-text">
+                    ${estimatedTotal.toFixed(2)} USD
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-[11px] text-pe-text-secondary">
+                  <span>
+                    ~{estimatedPages} {estimatedPages === 1 ? "page" : "pages"} × {copies} {copies === 1 ? "copy" : "copies"}
+                  </span>
+                  <span>
+                    {colorMode === "bw" ? "B&W ($0.10/p)" : "Color ($0.50/p)"}
+                  </span>
+                </div>
+              </div>
+
               <button
                 type="submit"
                 disabled={submitting || !selectedDocId}
@@ -332,7 +382,7 @@ export const StudentPortal: React.FC = () => {
                   <Clock className="w-5 h-5 text-pe-accent" />
                   My Print Requests ({requests.length})
                 </h2>
-                <p className="text-xs text-pe-text-secondary">Live request status and self-service pickup readiness</p>
+                <p className="text-xs text-pe-text-secondary">Live request status, payment settlement and pickup readiness</p>
               </div>
               <button
                 onClick={loadData}
@@ -352,12 +402,17 @@ export const StudentPortal: React.FC = () => {
                 {requests.map((req) => (
                   <div key={req.id} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="space-y-1">
-                      <div className="flex items-center gap-2.5 flex-wrap">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <FileText className="w-4 h-4 text-pe-accent flex-shrink-0" />
                         <span className="font-medium text-sm text-pe-text">
                           {req.document_name || "Document"}
                         </span>
                         <StatusBadge status={req.status} />
+                        <PaymentBadge
+                          status={req.payment_status}
+                          amount={req.total_amount}
+                          currency={req.currency}
+                        />
                       </div>
                       <div className="text-xs text-pe-text-secondary flex items-center gap-2.5 flex-wrap tabular-nums">
                         <span>{req.copies} {req.copies === 1 ? "copy" : "copies"}</span>
@@ -372,7 +427,31 @@ export const StudentPortal: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 self-end sm:self-center">
+                    <div className="flex items-center gap-2 self-end sm:self-center flex-wrap">
+                      {/* Pay Now Button if Unpaid and not Cancelled */}
+                      {req.payment_status !== "COMPLETED" && req.status !== "CANCELLED" && (
+                        <button
+                          onClick={() => setPayModalRequest(req)}
+                          className="min-h-[44px] px-3.5 py-2 text-xs font-semibold text-white bg-pe-accent hover:bg-pe-accent-hover rounded-pe-sm transition flex items-center gap-1.5 shadow-sm"
+                          title="Pay print charges online"
+                        >
+                          <CreditCard className="w-3.5 h-3.5" />
+                          <span>Pay ${req.total_amount ? req.total_amount.toFixed(2) : "0.10"}</span>
+                        </button>
+                      )}
+
+                      {/* Receipt Button if Completed */}
+                      {req.payment_status === "COMPLETED" && (
+                        <button
+                          onClick={() => setReceiptModalRequestId(req.id)}
+                          className="min-h-[44px] px-3.5 py-2 text-xs font-medium text-pe-text bg-pe-surface hover:bg-pe-surface-secondary border border-pe-border rounded-pe-sm transition flex items-center gap-1.5 shadow-sm"
+                          title="View verified payment receipt"
+                        >
+                          <Receipt className="w-3.5 h-3.5 text-[#248A3D]" />
+                          <span>Receipt</span>
+                        </button>
+                      )}
+
                       {/* Download document */}
                       <button
                         onClick={() => handleDownload(req.document_id, req.document_name)}
@@ -399,6 +478,25 @@ export const StudentPortal: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Payment Gateway Modal */}
+      {payModalRequest && (
+        <PaymentModal
+          request={payModalRequest}
+          onClose={() => setPayModalRequest(null)}
+          onPaymentSuccess={() => {
+            loadData();
+          }}
+        />
+      )}
+
+      {/* Payment Receipt Modal */}
+      {receiptModalRequestId && (
+        <PaymentReceiptModal
+          requestId={receiptModalRequestId}
+          onClose={() => setReceiptModalRequestId(null)}
+        />
+      )}
     </div>
   );
 };

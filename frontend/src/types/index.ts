@@ -8,6 +8,9 @@ export type RequestStatus =
   | "FAILED"
   | "CANCELLED";
 
+export type PaymentStatus = "UNPAID" | "PENDING" | "COMPLETED" | "FAILED" | "REFUNDED";
+export type PaymentMethod = "card" | "upi" | "campus_wallet" | "cash";
+
 export type ColorMode = "bw" | "color";
 export type DuplexMode = "single" | "double";
 
@@ -72,6 +75,72 @@ export interface PrintRequest {
   updated_at: string;
   settings?: PrintSettings;
   status_history?: StatusHistoryItem[];
+  // Payment fields
+  payment_status?: PaymentStatus;
+  total_amount?: number;
+  currency?: string;
+  rate_per_page?: number;
+  total_pages?: number;
+  payment_method?: string;
+  transaction_id?: string;
+  paid_at?: string;
+}
+
+export interface PaymentItem {
+  id: string;
+  request_id: string;
+  student_id: string;
+  student_name?: string;
+  staff_id?: string;
+  staff_name?: string;
+  amount: number;
+  currency: string;
+  rate_per_page: number;
+  total_pages: number;
+  status: PaymentStatus;
+  payment_method?: string;
+  transaction_id?: string;
+  gateway_provider: string;
+  receipt_reference?: string;
+  paid_at?: string;
+  created_at: string;
+}
+
+export interface PaymentReceipt {
+  receipt_number: string;
+  transaction_id: string;
+  paid_at: string;
+  amount: number;
+  currency: string;
+  status: string;
+  payment_method: string;
+  gateway_provider: string;
+  student_name: string;
+  student_email: string;
+  document_name: string;
+  copies: number;
+  color_mode: string;
+  duplex: string;
+  page_range: string;
+  total_pages: number;
+  rate_per_page: number;
+  staff_receiver_name?: string;
+}
+
+export interface PrintRateInfo {
+  bw_rate_per_page: number;
+  color_rate_per_page: number;
+  currency: string;
+  currency_symbol: string;
+}
+
+export interface PriceCalculation {
+  total_pages: number;
+  rate_per_page: number;
+  subtotal: number;
+  total_amount: number;
+  currency: string;
+  currency_symbol: string;
 }
 
 export interface NotificationItem {
@@ -96,6 +165,10 @@ export interface AdminReport {
   total_pages_printed_approx: number;
   total_documents_uploaded: number;
   total_storage_bytes: number;
+  total_revenue?: number;
+  total_paid_requests?: number;
+  total_unpaid_requests?: number;
+  revenue_by_method?: Record<string, number>;
 }
 
 export interface AuditLogItem {

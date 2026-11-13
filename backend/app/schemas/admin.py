@@ -15,6 +15,10 @@ class AdminReportResponse(BaseModel):
     total_pages_printed_approx: int
     total_documents_uploaded: int
     total_storage_bytes: int
+    total_revenue: float = 0.0
+    total_paid_requests: int = 0
+    total_unpaid_requests: int = 0
+    revenue_by_method: Dict[str, float] = {}
 
 
 class AuditLogResponse(BaseModel):

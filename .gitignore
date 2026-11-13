@@ -28,6 +28,7 @@ wheels/
 .pytest_cache/
 .coverage
 htmlcov/
+.playwright-mcp/
 
 # Node & Frontend
 frontend/node_modules/

@@ -6,6 +6,7 @@ from app.models.print_settings import PrintSettings
 from app.models.status_history import StatusHistory
 from app.models.notification import Notification
 from app.models.audit_log import AuditLog
+from app.models.payment import Payment, PaymentStatus, PaymentMethod
 
 __all__ = [
     "Base",
@@ -20,4 +21,7 @@ __all__ = [
     "StatusHistory",
     "Notification",
     "AuditLog",
+    "Payment",
+    "PaymentStatus",
+    "PaymentMethod",
 ]

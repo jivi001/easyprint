@@ -18,6 +18,7 @@ from app.repositories.document_repository import DocumentRepository
 from app.repositories.notification_repository import NotificationRepository
 from app.repositories.audit_repository import AuditRepository
 from app.models.notification import Notification
+from app.services.payment_service import PaymentService
 
 
 # State machine allowed transitions
@@ -91,6 +92,10 @@ class WorkflowService:
             changed_by=student.id,
             comment="Print request submitted."
         )
+
+        # Create initial UNPAID payment record with calculated pricing
+        payment_service = PaymentService(self.db)
+        payment_service.create_payment_for_request(req, doc)
 
         self.audit_repo.log_event(
             action="PRINT_REQUEST_CREATE",

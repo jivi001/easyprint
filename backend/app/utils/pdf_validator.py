@@ -59,6 +59,26 @@ def validate_pdf_content(content: bytes) -> Tuple[int, str]:
     return file_size, sha256_hash
 
 
+def extract_pdf_page_count(content: bytes) -> int:
+    """
+    Extracts the page count from PDF bytes.
+    First checks /Count in the /Pages catalog or searches /Type /Page objects.
+    Defaults to 1 if count cannot be extracted.
+    """
+    try:
+        matches = re.findall(rb"/Type\s*/Pages.*?/Count\s+(\d+)", content, re.DOTALL)
+        if matches:
+            counts = [int(m) for m in matches if m.isdigit()]
+            if counts:
+                return max(counts)
+        page_matches = re.findall(rb"/Type\s*/Page\b", content)
+        if page_matches:
+            return len(page_matches)
+    except Exception:
+        pass
+    return 1
+
+
 def sanitize_filename(client_filename: str) -> str:
     """Sanitizes user filename to prevent path traversal and XSS."""
     clean = Path(client_filename).name

@@ -9,6 +9,7 @@ from app.repositories.document_repository import DocumentRepository
 from app.models.user import User, UserRole
 from app.models.document import Document
 from app.models.audit_log import AuditLog
+from app.models.payment import Payment, PaymentStatus
 from app.schemas.admin import AdminReportResponse, AuditLogResponse
 
 
@@ -53,6 +54,17 @@ class AuditService:
 
         total_storage_bytes = self.db.query(func.sum(Document.file_size)).scalar() or 0
 
+        # Financial & Payment metrics
+        completed_payments = self.db.query(Payment).filter(Payment.status == PaymentStatus.COMPLETED).all()
+        total_revenue = round(sum(p.amount for p in completed_payments), 2)
+        total_paid_requests = len(completed_payments)
+        total_unpaid_requests = self.db.query(Payment).filter(Payment.status == PaymentStatus.UNPAID).count()
+
+        rev_by_method: Dict[str, float] = {}
+        for p in completed_payments:
+            m = p.payment_method or "unknown"
+            rev_by_method[m] = round(rev_by_method.get(m, 0.0) + p.amount, 2)
+
         return AdminReportResponse(
             total_users=total_users,
             total_students=total_students,
@@ -61,5 +73,9 @@ class AuditService:
             requests_by_status=status_counts,
             total_pages_printed_approx=total_copies,
             total_documents_uploaded=total_docs,
-            total_storage_bytes=total_storage_bytes
+            total_storage_bytes=total_storage_bytes,
+            total_revenue=total_revenue,
+            total_paid_requests=total_paid_requests,
+            total_unpaid_requests=total_unpaid_requests,
+            revenue_by_method=rev_by_method
         )

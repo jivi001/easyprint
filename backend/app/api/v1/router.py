@@ -5,6 +5,7 @@ from app.api.v1.documents import router as documents_router
 from app.api.v1.print_requests import router as print_requests_router
 from app.api.v1.notifications import router as notifications_router
 from app.api.v1.admin import router as admin_router
+from app.api.v1.payments import router as payments_router
 
 api_v1_router = APIRouter()
 
@@ -14,3 +15,4 @@ api_v1_router.include_router(documents_router)
 api_v1_router.include_router(print_requests_router)
 api_v1_router.include_router(notifications_router)
 api_v1_router.include_router(admin_router)
+api_v1_router.include_router(payments_router)

@@ -10,6 +10,10 @@ import {
   RequestStatus,
   ColorMode,
   DuplexMode,
+  PaymentItem,
+  PaymentReceipt,
+  PrintRateInfo,
+  PriceCalculation,
 } from "../types";
 
 const API_BASE = "/api/v1";
@@ -209,5 +213,78 @@ export const api = {
       body: JSON.stringify({ role, is_active: isActive }),
     });
     return handleResponse<User>(res);
+  },
+
+  // Payments
+  async getPaymentRates(): Promise<PrintRateInfo> {
+    const res = await fetch(`${API_BASE}/payments/rates`);
+    return handleResponse<PrintRateInfo>(res);
+  },
+
+  async calculatePayment(payload: {
+    page_range: string;
+    copies: number;
+    color_mode: ColorMode;
+    duplex: DuplexMode;
+    document_id?: string;
+  }): Promise<PriceCalculation> {
+    const res = await fetch(`${API_BASE}/payments/calculate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    return handleResponse<PriceCalculation>(res);
+  },
+
+  async processPayment(payload: {
+    request_id: string;
+    payment_method: string;
+    card_number?: string;
+    card_expiry?: string;
+    card_cvv?: string;
+    card_holder?: string;
+    upi_id?: string;
+    campus_id?: string;
+    campus_pin?: string;
+  }): Promise<PaymentItem> {
+    const res = await fetch(`${API_BASE}/payments/process`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify(payload),
+    });
+    return handleResponse<PaymentItem>(res);
+  },
+
+  async staffConfirmPayment(payload: {
+    request_id: string;
+    payment_method?: string;
+    notes?: string;
+  }): Promise<PaymentItem> {
+    const res = await fetch(`${API_BASE}/payments/staff-confirm`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify(payload),
+    });
+    return handleResponse<PaymentItem>(res);
+  },
+
+  async getPaymentByRequest(requestId: string): Promise<PaymentItem> {
+    const res = await fetch(`${API_BASE}/payments/request/${requestId}`, {
+      headers: getAuthHeader(),
+    });
+    return handleResponse<PaymentItem>(res);
+  },
+
+  async getPaymentReceipt(requestId: string): Promise<PaymentReceipt> {
+    const res = await fetch(`${API_BASE}/payments/receipt/${requestId}`, {
+      headers: getAuthHeader(),
+    });
+    return handleResponse<PaymentReceipt>(res);
   },
 };

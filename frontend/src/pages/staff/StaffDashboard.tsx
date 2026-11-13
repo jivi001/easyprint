@@ -13,10 +13,15 @@ import {
   AlertCircle,
   FileText,
   User,
+  DollarSign,
+  Coins,
+  Receipt,
 } from "lucide-react";
 import { api } from "../../services/api";
 import { PrintRequest, RequestStatus } from "../../types";
 import { StatusBadge } from "../../components/StatusBadge";
+import { PaymentBadge } from "../../components/PaymentBadge";
+import { PaymentReceiptModal } from "../../components/PaymentReceiptModal";
 
 export const StaffDashboard: React.FC = () => {
   const [requests, setRequests] = useState<PrintRequest[]>([]);
@@ -29,9 +34,15 @@ export const StaffDashboard: React.FC = () => {
   const [targetFailId, setTargetFailId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
+  // Payment states
+  const [receiptModalRequestId, setReceiptModalRequestId] = useState<string | null>(null);
+  const [unpaidPromptJob, setUnpaidPromptJob] = useState<PrintRequest | null>(null);
+  const [collectingPayment, setCollectingPayment] = useState<boolean>(false);
+
   const loadQueue = async () => {
     try {
-      const statusParam = filter === "ALL" ? undefined : (filter as RequestStatus);
+      const isCustomFilter = filter === "PAID" || filter === "UNPAID";
+      const statusParam = (filter === "ALL" || isCustomFilter) ? undefined : (filter as RequestStatus);
       const data = await api.listPrintRequests(statusParam);
       setRequests(data);
     } catch (err: any) {
@@ -94,6 +105,40 @@ export const StaffDashboard: React.FC = () => {
     setTargetFailId(null);
   };
 
+  const handleCollectCash = async (req: PrintRequest, andStartJob = false) => {
+    try {
+      setCollectingPayment(true);
+      await api.staffConfirmPayment({
+        request_id: req.id,
+        payment_method: "cash",
+        notes: `Collected in cash at counter ($${req.total_amount?.toFixed(2) || "0.10"})`,
+      });
+      setFeedback({
+        type: "success",
+        message: `Payment of $${req.total_amount?.toFixed(2) || "0.10"} confirmed in cash.`,
+      });
+
+      if (andStartJob && req.status === "PENDING") {
+        await api.updateRequestStatus(req.id, "PROCESSING", "Staff confirmed counter payment and initiated printing");
+      }
+
+      await loadQueue();
+      setUnpaidPromptJob(null);
+    } catch (err: any) {
+      setFeedback({ type: "error", message: err.message || "Failed to confirm cash payment." });
+    } finally {
+      setCollectingPayment(false);
+    }
+  };
+
+  const handleStartWorkflow = (req: PrintRequest) => {
+    if (req.payment_status !== "COMPLETED") {
+      setUnpaidPromptJob(req);
+    } else {
+      handleStatusTransition(req.id, "PROCESSING", "Staff initiated print job");
+    }
+  };
+
   const handleViewHistory = async (req: PrintRequest) => {
     try {
       const detailed = await api.getPrintRequest(req.id);
@@ -103,7 +148,19 @@ export const StaffDashboard: React.FC = () => {
     }
   };
 
+  const totalRevenueCollected = requests
+    .filter((r) => r.payment_status === "COMPLETED")
+    .reduce((sum, r) => sum + (r.total_amount || 0), 0);
+  const paidJobsCount = requests.filter((r) => r.payment_status === "COMPLETED").length;
+  const unpaidJobsCount = requests.filter((r) => r.payment_status !== "COMPLETED" && r.status !== "CANCELLED").length;
+  const unpaidBalance = requests
+    .filter((r) => r.payment_status !== "COMPLETED" && r.status !== "CANCELLED")
+    .reduce((sum, r) => sum + (r.total_amount || 0), 0);
+
   const filteredRequests = requests.filter((r) => {
+    if (filter === "PAID" && r.payment_status !== "COMPLETED") return false;
+    if (filter === "UNPAID" && r.payment_status === "COMPLETED") return false;
+
     const term = search.toLowerCase();
     const matchName = r.document_name?.toLowerCase().includes(term);
     const matchStudent = r.student_name?.toLowerCase().includes(term) || r.student_email?.toLowerCase().includes(term);
@@ -133,6 +190,48 @@ export const StaffDashboard: React.FC = () => {
         </button>
       </div>
 
+      {/* Revenue & Shift Summary Metrics */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-pe-surface p-4 rounded-pe-md border border-pe-border shadow-pe-card">
+          <div className="flex items-center justify-between text-xs text-pe-text-secondary mb-1">
+            <span className="font-medium">Shift Revenue Collected</span>
+            <DollarSign className="w-4 h-4 text-[#248A3D]" />
+          </div>
+          <div className="text-xl font-semibold text-pe-text tabular-nums">
+            ${totalRevenueCollected.toFixed(2)} <span className="text-xs text-pe-text-secondary font-normal">USD</span>
+          </div>
+          <p className="text-[11px] text-pe-text-secondary mt-1">
+            {paidJobsCount} {paidJobsCount === 1 ? "job settled" : "jobs settled"} to staff
+          </p>
+        </div>
+
+        <div className="bg-pe-surface p-4 rounded-pe-md border border-pe-border shadow-pe-card">
+          <div className="flex items-center justify-between text-xs text-pe-text-secondary mb-1">
+            <span className="font-medium">Active Queue Jobs</span>
+            <Printer className="w-4 h-4 text-pe-accent" />
+          </div>
+          <div className="text-xl font-semibold text-pe-text tabular-nums">
+            {requests.filter((r) => r.status === "PENDING" || r.status === "PROCESSING").length}
+          </div>
+          <p className="text-[11px] text-pe-text-secondary mt-1">
+            FIFO queue waiting for printing
+          </p>
+        </div>
+
+        <div className="bg-pe-surface p-4 rounded-pe-md border border-pe-border shadow-pe-card">
+          <div className="flex items-center justify-between text-xs text-pe-text-secondary mb-1">
+            <span className="font-medium">Unpaid Counter Balance</span>
+            <Coins className="w-4 h-4 text-[#9A6700]" />
+          </div>
+          <div className="text-xl font-semibold text-pe-text tabular-nums">
+            ${unpaidBalance.toFixed(2)}
+          </div>
+          <p className="text-[11px] text-pe-text-secondary mt-1">
+            {unpaidJobsCount} {unpaidJobsCount === 1 ? "order unpaid" : "orders unpaid"}
+          </p>
+        </div>
+      </div>
+
       {feedback && (
         <div
           className={`p-4 rounded-pe-sm border flex items-center justify-between gap-3 text-sm ${
@@ -155,7 +254,7 @@ export const StaffDashboard: React.FC = () => {
       <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
         {/* Status Filters */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-2 md:pb-0">
-          {["ALL", "PENDING", "PROCESSING", "READY", "COLLECTED", "FAILED"].map((st) => (
+          {["ALL", "PENDING", "PROCESSING", "READY", "PAID", "UNPAID", "COLLECTED", "FAILED"].map((st) => (
             <button
               key={st}
               onClick={() => setFilter(st)}
@@ -165,7 +264,13 @@ export const StaffDashboard: React.FC = () => {
                   : "bg-pe-surface text-pe-text-secondary hover:text-pe-text border border-pe-border"
               }`}
             >
-              {st === "ALL" ? "All Requests" : st.charAt(0) + st.slice(1).toLowerCase()}
+              {st === "ALL"
+                ? "All Requests"
+                : st === "PAID"
+                ? "Paid"
+                : st === "UNPAID"
+                ? "Unpaid"
+                : st.charAt(0) + st.slice(1).toLowerCase()}
             </button>
           ))}
         </div>
@@ -203,7 +308,15 @@ export const StaffDashboard: React.FC = () => {
                       </div>
                       <p className="text-xs text-pe-text-secondary mt-0.5">{req.student_email}</p>
                     </div>
-                    <StatusBadge status={req.status} />
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <StatusBadge status={req.status} />
+                      <PaymentBadge
+                        status={req.payment_status}
+                        amount={req.total_amount}
+                        currency={req.currency}
+                        compact
+                      />
+                    </div>
                   </div>
 
                   <div className="bg-pe-surface-secondary p-3 rounded-pe-sm border border-pe-border-subtle space-y-1">
@@ -222,10 +335,26 @@ export const StaffDashboard: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between gap-2 pt-1">
-                    <span className="text-xs text-pe-text-secondary tabular-nums">
-                      {new Date(req.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                    </span>
+                  <div className="flex items-center justify-between gap-2 pt-1 flex-wrap">
+                    <div className="flex items-center gap-1.5">
+                      {req.payment_status !== "COMPLETED" && (
+                        <button
+                          onClick={() => handleCollectCash(req)}
+                          className="min-h-[44px] px-3 py-1.5 bg-[#FFF8E6] hover:bg-[#FFF2CC] text-[#7A5200] border border-[#F2E5C2] rounded-pe-sm text-xs font-semibold flex items-center gap-1"
+                          title="Collect cash at counter"
+                        >
+                          <Coins className="w-3.5 h-3.5" /> Collect ${req.total_amount?.toFixed(2) || "0.10"}
+                        </button>
+                      )}
+                      {req.payment_status === "COMPLETED" && (
+                        <button
+                          onClick={() => setReceiptModalRequestId(req.id)}
+                          className="min-h-[44px] px-2.5 py-1.5 text-pe-text hover:bg-pe-surface-secondary border border-pe-border rounded-pe-sm text-xs font-medium flex items-center gap-1"
+                        >
+                          <Receipt className="w-3.5 h-3.5 text-[#248A3D]" /> Receipt
+                        </button>
+                      )}
+                    </div>
 
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <button
@@ -237,7 +366,7 @@ export const StaffDashboard: React.FC = () => {
 
                       {req.status === "PENDING" && (
                         <button
-                          onClick={() => handleStatusTransition(req.id, "PROCESSING", "Staff initiated print job")}
+                          onClick={() => handleStartWorkflow(req)}
                           className="min-h-[44px] px-3.5 py-2 bg-[#FFF8E6] hover:bg-[#FFF2CC] text-[#7A5200] border border-[#F2E5C2] font-semibold rounded-pe-sm text-xs flex items-center gap-1 shadow-sm"
                         >
                           <Play className="w-4 h-4 fill-current" /> Start
@@ -294,7 +423,8 @@ export const StaffDashboard: React.FC = () => {
                     <th className="py-3 px-4">Student</th>
                     <th className="py-3 px-4">Document</th>
                     <th className="py-3 px-4">Print Specs</th>
-                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4">Job Status</th>
+                    <th className="py-3 px-4">Payment</th>
                     <th className="py-3 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
@@ -344,9 +474,42 @@ export const StaffDashboard: React.FC = () => {
                         </div>
                       </td>
 
-                      {/* Status */}
+                      {/* Job Status */}
                       <td className="py-3.5 px-4">
                         <StatusBadge status={req.status} />
+                      </td>
+
+                      {/* Payment Status & Quick Settlement */}
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <div className="space-y-1.5">
+                          <PaymentBadge
+                            status={req.payment_status}
+                            amount={req.total_amount}
+                            currency={req.currency}
+                          />
+                          {req.payment_status === "COMPLETED" ? (
+                            <div className="flex items-center gap-1.5 text-[11px] text-pe-text-secondary">
+                              <span className="capitalize">{req.payment_method || "Paid"}</span>
+                              <button
+                                onClick={() => setReceiptModalRequestId(req.id)}
+                                className="text-pe-accent hover:underline flex items-center gap-0.5 font-medium"
+                                title="View Receipt"
+                              >
+                                <Receipt className="w-3 h-3 text-[#248A3D]" /> Receipt
+                              </button>
+                            </div>
+                          ) : (
+                            <div>
+                              <button
+                                onClick={() => handleCollectCash(req)}
+                                className="min-h-[32px] px-2.5 py-1 text-[11px] font-semibold text-[#7A5200] bg-[#FFF8E6] hover:bg-[#FFF2CC] border border-[#F2E5C2] rounded-pe-sm transition flex items-center gap-1 shadow-xs"
+                                title="Record counter cash settlement"
+                              >
+                                <Coins className="w-3 h-3" /> Collect Cash
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </td>
 
                       {/* Workflow Actions with 44px Touch Targets */}
@@ -362,7 +525,7 @@ export const StaffDashboard: React.FC = () => {
 
                           {req.status === "PENDING" && (
                             <button
-                              onClick={() => handleStatusTransition(req.id, "PROCESSING", "Staff initiated print job")}
+                              onClick={() => handleStartWorkflow(req)}
                               className="min-h-[44px] px-3.5 py-2.5 bg-[#FFF8E6] hover:bg-[#FFF2CC] text-[#7A5200] border border-[#F2E5C2] font-semibold rounded-pe-sm transition flex items-center gap-1.5 text-xs shadow-sm"
                             >
                               <Play className="w-4 h-4 fill-current" /> Start
@@ -512,6 +675,79 @@ export const StaffDashboard: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Unpaid Job Staff Confirmation Modal */}
+      {unpaidPromptJob && (
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !collectingPayment) setUnpaidPromptJob(null);
+          }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 animate-fade-in"
+        >
+          <div className="bg-pe-surface rounded-pe-lg max-w-md w-full p-6 shadow-pe-popover border border-pe-border space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#FFF8E6] text-[#9A6700] border border-[#F2E5C2] flex items-center justify-center flex-shrink-0">
+                <Coins className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="font-semibold text-base text-pe-text">Unpaid Print Job</h3>
+                <p className="text-xs text-pe-text-secondary">
+                  Job for <strong>{unpaidPromptJob.student_name || "Student"}</strong> ({unpaidPromptJob.document_name}) has an unpaid balance of:
+                </p>
+                <div className="text-xl font-bold text-pe-text tabular-nums pt-1">
+                  ${unpaidPromptJob.total_amount ? unpaidPromptJob.total_amount.toFixed(2) : "0.10"} USD
+                </div>
+              </div>
+            </div>
+
+            <p className="text-xs text-pe-text-secondary bg-pe-surface-secondary p-3 rounded-pe-sm border border-pe-border-subtle">
+              You can collect cash settlement at the counter right now, or proceed to print and collect upon student collection at the counter tray.
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 pt-2">
+              <button
+                onClick={() => setUnpaidPromptJob(null)}
+                disabled={collectingPayment}
+                className="min-h-[44px] px-3.5 py-2 text-xs font-medium text-pe-text-secondary hover:text-pe-text hover:bg-pe-surface-secondary rounded-pe-sm transition"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={() => {
+                  handleStatusTransition(
+                    unpaidPromptJob.id,
+                    "PROCESSING",
+                    "Staff initiated print job (payment pending pickup)"
+                  );
+                  setUnpaidPromptJob(null);
+                }}
+                disabled={collectingPayment}
+                className="min-h-[44px] px-3.5 py-2 text-xs font-medium text-pe-text bg-pe-surface hover:bg-pe-surface-secondary border border-pe-border rounded-pe-sm transition"
+              >
+                Proceed (Pay on Pickup)
+              </button>
+
+              <button
+                onClick={() => handleCollectCash(unpaidPromptJob, true)}
+                disabled={collectingPayment}
+                className="min-h-[44px] px-4 py-2 text-xs font-semibold text-[#7A5200] bg-[#FFF8E6] hover:bg-[#FFF2CC] border border-[#F2E5C2] rounded-pe-sm transition shadow-sm flex items-center justify-center gap-1.5"
+              >
+                <Coins className="w-3.5 h-3.5" />
+                <span>Collect Cash & Start</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Receipt Modal */}
+      {receiptModalRequestId && (
+        <PaymentReceiptModal
+          requestId={receiptModalRequestId}
+          onClose={() => setReceiptModalRequestId(null)}
+        />
       )}
     </div>
   );

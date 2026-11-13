@@ -54,6 +54,15 @@ class PrintRequestResponse(BaseModel):
     page_range: str
     created_at: datetime
     updated_at: datetime
+    # Payment fields
+    payment_status: Optional[str] = "UNPAID"
+    total_amount: Optional[float] = 0.0
+    currency: Optional[str] = "USD"
+    rate_per_page: Optional[float] = 0.10
+    total_pages: Optional[int] = 1
+    payment_method: Optional[str] = None
+    transaction_id: Optional[str] = None
+    paid_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
