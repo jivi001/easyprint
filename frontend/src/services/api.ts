@@ -287,4 +287,19 @@ export const api = {
     });
     return handleResponse<PaymentReceipt>(res);
   },
+
+  async getDocumentPageCount(documentId: string): Promise<{ document_id: string; file_name: string; page_count: number }> {
+    const res = await fetch(`${API_BASE}/documents/${documentId}/page-count`, {
+      headers: getAuthHeader(),
+    });
+    return handleResponse<{ document_id: string; file_name: string; page_count: number }>(res);
+  },
+
+  async recalculatePayment(requestId: string): Promise<PaymentItem> {
+    const res = await fetch(`${API_BASE}/payments/recalculate/${requestId}`, {
+      method: "POST",
+      headers: getAuthHeader(),
+    });
+    return handleResponse<PaymentItem>(res);
+  },
 };

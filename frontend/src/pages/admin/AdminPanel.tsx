@@ -203,7 +203,7 @@ export const AdminPanel: React.FC = () => {
                 <DollarSign className="w-4 h-4 text-[#248A3D]" />
               </div>
               <p className="text-2xl font-bold text-pe-text tabular-nums">
-                ${(report.total_revenue || 0).toFixed(2)} <span className="text-xs text-pe-text-secondary font-normal">USD</span>
+                ₹{(report.total_revenue || 0).toFixed(2)} <span className="text-xs text-pe-text-secondary font-normal">INR</span>
               </p>
               <div className="text-[11px] text-pe-text-secondary">
                 {report.total_paid_requests || 0} jobs settled to staff
@@ -238,7 +238,7 @@ export const AdminPanel: React.FC = () => {
                       className="inline-flex items-center gap-1 px-2 py-0.5 bg-pe-surface-secondary rounded border border-pe-border-subtle"
                     >
                       <span className="capitalize font-medium">{m}:</span>
-                      <span>${val.toFixed(2)}</span>
+                      <span>₹{val.toFixed(2)}</span>
                     </span>
                   ))
                 ) : (

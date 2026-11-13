@@ -2,7 +2,7 @@ import uuid
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
@@ -31,10 +31,10 @@ from app.utils.pdf_validator import extract_pdf_page_count
 
 settings = get_settings()
 
-RATE_BW_PER_PAGE = 0.10
-RATE_COLOR_PER_PAGE = 0.50
-CURRENCY = "USD"
-CURRENCY_SYMBOL = "$"
+RATE_BW_PER_PAGE = 3.00
+RATE_COLOR_PER_PAGE = 6.00
+CURRENCY = "INR"
+CURRENCY_SYMBOL = "₹"
 
 
 def parse_page_range_count(page_range: str, total_doc_pages: int = 1) -> int:
@@ -65,6 +65,45 @@ def parse_page_range_count(page_range: str, total_doc_pages: int = 1) -> int:
     return max(1, total_doc_pages)
 
 
+def count_pdf_pages(file_path_or_bytes: Union[str, Path, bytes]) -> int:
+    """
+    Counts how many pages a PDF document has from bytes or a file path.
+    Returns integer page count (minimum 1).
+    """
+    try:
+        if isinstance(file_path_or_bytes, (str, Path)):
+            path = Path(file_path_or_bytes)
+            if path.exists():
+                with open(path, "rb") as f:
+                    return extract_pdf_page_count(f.read())
+        elif isinstance(file_path_or_bytes, bytes):
+            return extract_pdf_page_count(file_path_or_bytes)
+    except Exception:
+        pass
+    return 1
+
+
+def calculate_print_cost(
+    document_pages: int,
+    color_mode: str = "bw",
+    copies: int = 1,
+    page_range: str = "all",
+    duplex: str = "single"
+) -> Tuple[int, float, float]:
+    """
+    Calculates the price after the page count output.
+    Prices are charged strictly based on document pages (not multiplied by copies).
+    Returns (total_pages, rate_per_page, total_amount).
+    """
+    sheets_in_range = parse_page_range_count(page_range, document_pages)
+    total_pages = max(1, sheets_in_range)
+    is_color = str(color_mode).lower() == "color"
+    rate = RATE_COLOR_PER_PAGE if is_color else RATE_BW_PER_PAGE
+    total_amount = round(total_pages * rate, 2)
+    total_amount = max(3.00, total_amount)
+    return total_pages, rate, total_amount
+
+
 class PaymentService:
     def __init__(self, db: Session):
         self.db = db
@@ -81,17 +120,53 @@ class PaymentService:
             currency_symbol=CURRENCY_SYMBOL
         )
 
-    def get_document_page_count(self, doc: Document) -> int:
-        """Reads PDF file from storage to extract real page count, default 1."""
+    def count_document_pages(self, document_or_id: Union[Document, uuid.UUID, str]) -> int:
+        """
+        Counts how many pages a document has.
+        Accepts a Document model or document UUID/string.
+        """
+        doc = None
+        if isinstance(document_or_id, Document):
+            doc = document_or_id
+        else:
+            try:
+                doc_uuid = uuid.UUID(str(document_or_id))
+                doc = self.db.query(Document).filter(Document.id == doc_uuid).first()
+            except Exception:
+                pass
+
+        if not doc:
+            return 1
+
         try:
             target_path = (self.storage_base / doc.storage_key).resolve()
-            if target_path.exists():
-                with open(target_path, "rb") as f:
-                    content = f.read()
-                    return extract_pdf_page_count(content)
+            return count_pdf_pages(target_path)
         except Exception:
-            pass
-        return 1
+            return 1
+
+    def get_document_page_count(self, doc: Document) -> int:
+        """Reads PDF file from storage to extract real page count, default 1."""
+        return self.count_document_pages(doc)
+
+    def calculate_price_from_pages(
+        self,
+        document_pages: int,
+        color_mode: str = "bw",
+        copies: int = 1,
+        page_range: str = "all",
+        duplex: str = "single"
+    ) -> Tuple[int, float, float]:
+        """
+        Calculates the price after the document page count output.
+        Returns (total_pages, rate_per_page, total_amount).
+        """
+        return calculate_print_cost(
+            document_pages=document_pages,
+            color_mode=color_mode,
+            copies=copies,
+            page_range=page_range,
+            duplex=duplex
+        )
 
     def calculate_pricing(
         self,
@@ -103,17 +178,81 @@ class PaymentService:
     ) -> Tuple[int, float, float]:
         """
         Returns (total_pages, rate_per_page, total_amount).
-        total_pages = sheets_in_range * copies
+        total_pages is based on document pages in range (not multiplied by copies).
         """
-        sheets_in_range = parse_page_range_count(page_range, document_pages)
-        total_pages = max(1, sheets_in_range * max(1, copies))
-        
-        is_color = color_mode.lower() == "color"
-        rate = RATE_COLOR_PER_PAGE if is_color else RATE_BW_PER_PAGE
-        
-        total_amount = round(total_pages * rate, 2)
-        total_amount = max(0.10, total_amount)
-        return total_pages, rate, total_amount
+        return self.calculate_price_from_pages(
+            document_pages=document_pages,
+            color_mode=color_mode,
+            copies=copies,
+            page_range=page_range,
+            duplex=duplex
+        )
+
+    def update_request_cost_from_document(self, request_id: uuid.UUID) -> Payment:
+        """
+        1. Counts how many pages the document has.
+        2. Calculates the price after the count output.
+        3. Updates the payment cost and page count based on the output pages.
+        """
+        req = self.db.query(PrintRequest).filter(PrintRequest.id == request_id).first()
+        if not req:
+            raise ResourceNotFoundError(f"Print request {request_id} not found.")
+
+        # 1. Count pages in the document
+        doc = req.document or self.db.query(Document).filter(Document.id == req.document_id).first()
+        page_count = self.count_document_pages(doc) if doc else 1
+
+        # 2. Calculate price after the count output
+        color_mode_val = req.color_mode.value if hasattr(req.color_mode, "value") else str(req.color_mode)
+        duplex_val = req.duplex.value if hasattr(req.duplex, "value") else str(req.duplex)
+        total_pages, rate, total_amount = self.calculate_price_from_pages(
+            document_pages=page_count,
+            color_mode=color_mode_val,
+            copies=req.copies,
+            page_range=req.page_range,
+            duplex=duplex_val
+        )
+
+        # 3. Update the payment cost based on output pages
+        payment = self.db.query(Payment).filter(Payment.request_id == req.id).first()
+        if not payment:
+            payment = Payment(
+                request_id=req.id,
+                student_id=req.student_id,
+                amount=total_amount,
+                currency=CURRENCY,
+                rate_per_page=rate,
+                total_pages=total_pages,
+                status=PaymentStatus.UNPAID,
+                gateway_provider="PrintEasy Campus Gateway"
+            )
+            self.db.add(payment)
+        else:
+            payment.total_pages = total_pages
+            payment.rate_per_page = rate
+            payment.amount = total_amount
+            payment.currency = CURRENCY
+
+        self.db.commit()
+        self.db.refresh(payment)
+
+        # Audit log event
+        self.audit_repo.log_event(
+            action="PAYMENT_COST_RECALCULATED",
+            entity_type="payment",
+            user_id=req.student_id,
+            entity_id=str(payment.id),
+            details={
+                "request_id": str(req.id),
+                "document_pages": page_count,
+                "total_pages": total_pages,
+                "rate_per_page": rate,
+                "total_amount": total_amount,
+                "currency": CURRENCY
+            }
+        )
+        self.db.commit()
+        return payment
 
     def create_payment_for_request(
         self,
@@ -231,7 +370,7 @@ class PaymentService:
         notif = Notification(
             user_id=req.student_id,
             request_id=req.id,
-            message=f"Payment of {payment.currency} ${payment.amount:.2f} confirmed for '{doc_name}'. Ref: {txn_id}.",
+            message=f"Payment of {payment.currency} {CURRENCY_SYMBOL}{payment.amount:.2f} confirmed for '{doc_name}'. Ref: {txn_id}.",
             is_read=False
         )
         self.notif_repo.create(notif)
@@ -295,7 +434,7 @@ class PaymentService:
         notif = Notification(
             user_id=req.student_id,
             request_id=req.id,
-            message=f"Payment of ${payment.amount:.2f} confirmed at counter by Staff {staff.name} for '{doc_name}'.",
+            message=f"Payment of {CURRENCY_SYMBOL}{payment.amount:.2f} confirmed at counter by Staff {staff.name} for '{doc_name}'.",
             is_read=False
         )
         self.notif_repo.create(notif)

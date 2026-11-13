@@ -8,6 +8,7 @@ from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models.user import User
 from app.services.document_service import DocumentService
+from app.services.payment_service import PaymentService
 from app.schemas.document import DocumentResponse, DocumentUploadResponse
 from app.core.exceptions import (
     DocumentValidationError,
@@ -86,3 +87,29 @@ def download_document(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.message)
     except UnauthorizedAccessError as e:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=e.message)
+
+
+@router.get("/{id}/page-count")
+def get_document_page_count(
+    id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Returns how many pages this document has.
+    Enforces IDOR checks so students only query page count of their documents.
+    """
+    doc_service = DocumentService(db)
+    doc = doc_service.doc_repo.get_by_id(id)
+    if not doc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found.")
+    if hasattr(current_user.role, "value") and current_user.role.value == "STUDENT" and doc.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied.")
+
+    pay_service = PaymentService(db)
+    page_count = pay_service.count_document_pages(doc)
+    return {
+        "document_id": doc.id,
+        "file_name": doc.file_name,
+        "page_count": page_count
+    }

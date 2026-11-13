@@ -6,7 +6,7 @@ from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models.user import User
 from app.models.payment import Payment
-from app.services.payment_service import PaymentService
+from app.services.payment_service import PaymentService, CURRENCY, CURRENCY_SYMBOL
 from app.schemas.payment import (
     PaymentRateInfo,
     PaymentCalculateRequest,
@@ -84,8 +84,8 @@ def calculate_price(
         rate_per_page=rate,
         subtotal=total_amount,
         total_amount=total_amount,
-        currency="USD",
-        currency_symbol="$"
+        currency=CURRENCY,
+        currency_symbol=CURRENCY_SYMBOL
     )
 
 
@@ -177,3 +177,23 @@ def get_payment_receipt(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=e.message)
     except DomainException as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.message)
+
+
+@router.post("/recalculate/{request_id}", response_model=PaymentResponse)
+def recalculate_and_update_request_cost(
+    request_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Counts pages in the document for the print request, calculates the price after the count,
+    and updates the payment record cost in the database based on the output pages.
+    """
+    service = PaymentService(db)
+    try:
+        payment = service.update_request_cost_from_document(request_id)
+        return _to_payment_dto(payment)
+    except ResourceNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

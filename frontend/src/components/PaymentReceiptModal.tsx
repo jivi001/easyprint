@@ -126,7 +126,7 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({
                 </div>
                 <div className="flex justify-between py-1 border-b border-pe-border-subtle/60">
                   <span className="text-pe-text-secondary">Page Rate</span>
-                  <span className="text-pe-text">${receipt.rate_per_page.toFixed(2)} / page</span>
+                  <span className="text-pe-text">₹{receipt.rate_per_page.toFixed(2)} / page</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-pe-border-subtle/60">
                   <span className="text-pe-text-secondary">Payment Method</span>
@@ -144,15 +144,15 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({
               <div className="p-3 bg-pe-surface-secondary/70 rounded-pe-sm border border-pe-border-subtle space-y-1.5 tabular-nums">
                 <div className="flex justify-between text-xs text-pe-text-secondary">
                   <span>Subtotal</span>
-                  <span>${receipt.amount.toFixed(2)}</span>
+                  <span>₹{receipt.amount.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-xs text-pe-text-secondary">
                   <span>Campus Facility Fee</span>
-                  <span>$0.00</span>
+                  <span>₹0.00</span>
                 </div>
                 <div className="pt-1.5 border-t border-pe-border-subtle flex justify-between text-sm font-semibold text-pe-text">
                   <span>Total Settled</span>
-                  <span className="text-pe-accent">${receipt.amount.toFixed(2)} USD</span>
+                  <span className="text-pe-accent">₹{receipt.amount.toFixed(2)} {receipt.currency || "INR"}</span>
                 </div>
               </div>
 

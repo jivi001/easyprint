@@ -57,8 +57,8 @@ class PrintRequestResponse(BaseModel):
     # Payment fields
     payment_status: Optional[str] = "UNPAID"
     total_amount: Optional[float] = 0.0
-    currency: Optional[str] = "USD"
-    rate_per_page: Optional[float] = 0.10
+    currency: Optional[str] = "INR"
+    rate_per_page: Optional[float] = 3.00
     total_pages: Optional[int] = 1
     payment_method: Optional[str] = None
     transaction_id: Optional[str] = None

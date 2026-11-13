@@ -79,3 +79,34 @@ def test_staff_can_access_student_document_for_printing(
     dl_res = client.get(f"/api/v1/documents/{doc_id}", headers=staff_auth_header)
     assert dl_res.status_code == status.HTTP_200_OK
     assert dl_res.content == valid_pdf_bytes
+
+
+def test_read_number_of_pages_in_document(client, student_auth_header, valid_pdf_bytes, db_session):
+    from app.utils.pdf_validator import read_document_pages
+    from app.services.document_service import DocumentService
+    import uuid
+
+    # 1. Test from raw bytes
+    assert read_document_pages(valid_pdf_bytes) == 1
+
+    # 2. Test from in-memory stream
+    stream = io.BytesIO(valid_pdf_bytes)
+    assert read_document_pages(stream) == 1
+
+    # 3. Test multi-page PDF bytes
+    multi_page = (
+        b"%PDF-1.4\n"
+        b"1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n"
+        b"2 0 obj\n<< /Type /Pages /Count 7 >>\nendobj\n"
+        b"trailer\n<< /Root 1 0 R >>\n%%EOF\n"
+    )
+    assert read_document_pages(multi_page) == 7
+
+    # 4. Upload and test DocumentService.get_page_count from storage
+    files = {"file": ("report.pdf", io.BytesIO(valid_pdf_bytes), "application/pdf")}
+    upload_res = client.post("/api/v1/documents/upload", headers=student_auth_header, files=files)
+    doc_id = uuid.UUID(upload_res.json()["id"])
+
+    doc_service = DocumentService(db_session)
+    count = doc_service.get_page_count(doc_id)
+    assert count == 1

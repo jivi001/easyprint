@@ -19,6 +19,7 @@ from app.utils.pdf_validator import (
     validate_pdf_content,
     sanitize_filename,
     generate_storage_key,
+    read_document_pages,
 )
 
 settings = get_settings()
@@ -137,3 +138,14 @@ class DocumentService:
         self.db.commit()
 
         return doc, file_path
+
+    def get_page_count(self, document_id: uuid.UUID) -> int:
+        """
+        Reads the number of pages in the specified document from storage.
+        """
+        doc = self.doc_repo.get_by_id(document_id)
+        if not doc:
+            raise ResourceNotFoundError("Document not found.")
+
+        file_path = (self.storage_base / doc.storage_key).resolve()
+        return read_document_pages(file_path)

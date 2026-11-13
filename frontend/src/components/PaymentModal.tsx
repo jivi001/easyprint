@@ -104,8 +104,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     }
   };
 
-  const totalAmount = request.total_amount ?? 0.10;
-  const ratePerPage = request.rate_per_page ?? (request.color_mode === "color" ? 0.50 : 0.10);
+  const totalAmount = request.total_amount ?? 3.00;
+  const ratePerPage = request.rate_per_page ?? (request.color_mode === "color" ? 6.00 : 3.00);
   const totalPages = request.total_pages ?? request.copies;
 
   return (
@@ -154,7 +154,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             <div className="bg-pe-surface-secondary rounded-pe-sm p-4 border border-pe-border-subtle text-left text-xs space-y-2 tabular-nums">
               <div className="flex justify-between py-1 border-b border-pe-border-subtle/70">
                 <span className="text-pe-text-secondary">Amount Paid</span>
-                <span className="font-semibold text-pe-text">${successData.amount.toFixed(2)} USD</span>
+                <span className="font-semibold text-pe-text">₹{successData.amount.toFixed(2)} {successData.currency || "INR"}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-pe-border-subtle/70">
                 <span className="text-pe-text-secondary">Transaction ID</span>
@@ -194,7 +194,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 <div className="text-right tabular-nums">
                   <span className="text-xs text-pe-text-secondary">Total Due</span>
                   <p className="text-lg font-semibold text-pe-text">
-                    ${totalAmount.toFixed(2)}
+                    ₹{totalAmount.toFixed(2)}
                   </p>
                 </div>
               </div>
@@ -204,7 +204,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   {totalPages} {totalPages === 1 ? "page" : "pages"} ({request.copies} {request.copies === 1 ? "copy" : "copies"})
                 </span>
                 <span>•</span>
-                <span className="capitalize">{request.color_mode === "bw" ? "B&W" : "Color"} (${ratePerPage.toFixed(2)}/page)</span>
+                <span className="capitalize">{request.color_mode === "bw" ? "B&W" : "Color"} (₹{ratePerPage.toFixed(2)}/page)</span>
                 <span>•</span>
                 <span className="capitalize">{request.duplex}</span>
               </div>
@@ -352,7 +352,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   <div className="text-xs text-pe-text-secondary space-y-0.5">
                     <p className="font-semibold text-pe-text">Scan & Pay via any UPI App</p>
                     <p>Google Pay, PhonePe, Paytm, or BHIM</p>
-                    <p className="text-pe-accent font-medium tabular-nums">Amount: ${totalAmount.toFixed(2)}</p>
+                    <p className="text-pe-accent font-medium tabular-nums">Amount: ₹{totalAmount.toFixed(2)}</p>
                   </div>
                 </div>
 
@@ -414,7 +414,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 ) : (
                   <>
                     <Lock className="w-4 h-4" />
-                    <span>Pay ${totalAmount.toFixed(2)} Securely</span>
+                    <span>Pay ₹{totalAmount.toFixed(2)} Securely</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}

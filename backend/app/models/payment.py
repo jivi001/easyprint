@@ -55,7 +55,7 @@ class Payment(Base, TimestampMixin):
         index=True
     )
     amount: Mapped[float] = mapped_column(Float, nullable=False)
-    currency: Mapped[str] = mapped_column(String(10), default="USD", nullable=False)
+    currency: Mapped[str] = mapped_column(String(10), default="INR", nullable=False)
     rate_per_page: Mapped[float] = mapped_column(Float, nullable=False)
     total_pages: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     status: Mapped[PaymentStatus] = mapped_column(

@@ -13,11 +13,11 @@ interface PaymentBadgeProps {
 export const PaymentBadge: React.FC<PaymentBadgeProps> = ({
   status = "UNPAID",
   amount,
-  currency = "USD",
+  currency = "INR",
   className = "",
   compact = false,
 }) => {
-  const formattedAmount = amount !== undefined ? `$${amount.toFixed(2)}` : "";
+  const formattedAmount = amount !== undefined ? `₹${amount.toFixed(2)}` : "";
 
   switch (status) {
     case "COMPLETED":

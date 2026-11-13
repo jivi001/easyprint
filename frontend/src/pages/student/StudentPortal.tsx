@@ -159,8 +159,8 @@ export const StudentPortal: React.FC = () => {
   };
 
   const estimatedPages = getEstimatedPages();
-  const ratePerPage = colorMode === "color" ? 0.50 : 0.10;
-  const estimatedTotal = Math.max(0.10, Number((estimatedPages * copies * ratePerPage).toFixed(2)));
+  const ratePerPage = colorMode === "color" ? 6.00 : 3.00;
+  const estimatedTotal = Math.max(3.00, Number((estimatedPages * ratePerPage).toFixed(2)));
 
   return (
     <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-8 space-y-6">
@@ -341,15 +341,15 @@ export const StudentPortal: React.FC = () => {
                     Estimated Cost
                   </span>
                   <span className="text-sm font-semibold text-pe-text">
-                    ${estimatedTotal.toFixed(2)} USD
+                    ₹{estimatedTotal.toFixed(2)} INR
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-[11px] text-pe-text-secondary">
                   <span>
-                    ~{estimatedPages} {estimatedPages === 1 ? "page" : "pages"} × {copies} {copies === 1 ? "copy" : "copies"}
+                    ~{estimatedPages} {estimatedPages === 1 ? "document page" : "document pages"} ({copies} {copies === 1 ? "copy" : "copies"})
                   </span>
                   <span>
-                    {colorMode === "bw" ? "B&W ($0.10/p)" : "Color ($0.50/p)"}
+                    {colorMode === "bw" ? "B&W (₹3.00/p)" : "Color (₹6.00/p)"}
                   </span>
                 </div>
               </div>
@@ -436,7 +436,7 @@ export const StudentPortal: React.FC = () => {
                           title="Pay print charges online"
                         >
                           <CreditCard className="w-3.5 h-3.5" />
-                          <span>Pay ${req.total_amount ? req.total_amount.toFixed(2) : "0.10"}</span>
+                          <span>Pay ₹{req.total_amount ? req.total_amount.toFixed(2) : "3.00"}</span>
                         </button>
                       )}
 

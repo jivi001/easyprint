@@ -6,10 +6,10 @@ from app.models.payment import PaymentStatus, PaymentMethod
 
 
 class PaymentRateInfo(BaseModel):
-    bw_rate_per_page: float = 0.10
-    color_rate_per_page: float = 0.50
-    currency: str = "USD"
-    currency_symbol: str = "$"
+    bw_rate_per_page: float = 3.00
+    color_rate_per_page: float = 6.00
+    currency: str = "INR"
+    currency_symbol: str = "₹"
 
 
 class PaymentCalculateRequest(BaseModel):
@@ -25,8 +25,8 @@ class PaymentCalculateResponse(BaseModel):
     rate_per_page: float
     subtotal: float
     total_amount: float
-    currency: str = "USD"
-    currency_symbol: str = "$"
+    currency: str = "INR"
+    currency_symbol: str = "₹"
 
 
 class PaymentProcessRequest(BaseModel):

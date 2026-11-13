@@ -111,11 +111,11 @@ export const StaffDashboard: React.FC = () => {
       await api.staffConfirmPayment({
         request_id: req.id,
         payment_method: "cash",
-        notes: `Collected in cash at counter ($${req.total_amount?.toFixed(2) || "0.10"})`,
+        notes: `Collected in cash at counter (₹${req.total_amount?.toFixed(2) || "3.00"})`,
       });
       setFeedback({
         type: "success",
-        message: `Payment of $${req.total_amount?.toFixed(2) || "0.10"} confirmed in cash.`,
+        message: `Payment of ₹${req.total_amount?.toFixed(2) || "3.00"} confirmed in cash.`,
       });
 
       if (andStartJob && req.status === "PENDING") {
@@ -198,7 +198,7 @@ export const StaffDashboard: React.FC = () => {
             <DollarSign className="w-4 h-4 text-[#248A3D]" />
           </div>
           <div className="text-xl font-semibold text-pe-text tabular-nums">
-            ${totalRevenueCollected.toFixed(2)} <span className="text-xs text-pe-text-secondary font-normal">USD</span>
+            ₹{totalRevenueCollected.toFixed(2)} <span className="text-xs text-pe-text-secondary font-normal">INR</span>
           </div>
           <p className="text-[11px] text-pe-text-secondary mt-1">
             {paidJobsCount} {paidJobsCount === 1 ? "job settled" : "jobs settled"} to staff
@@ -224,7 +224,7 @@ export const StaffDashboard: React.FC = () => {
             <Coins className="w-4 h-4 text-[#9A6700]" />
           </div>
           <div className="text-xl font-semibold text-pe-text tabular-nums">
-            ${unpaidBalance.toFixed(2)}
+            ₹{unpaidBalance.toFixed(2)}
           </div>
           <p className="text-[11px] text-pe-text-secondary mt-1">
             {unpaidJobsCount} {unpaidJobsCount === 1 ? "order unpaid" : "orders unpaid"}
@@ -343,7 +343,7 @@ export const StaffDashboard: React.FC = () => {
                           className="min-h-[44px] px-3 py-1.5 bg-[#FFF8E6] hover:bg-[#FFF2CC] text-[#7A5200] border border-[#F2E5C2] rounded-pe-sm text-xs font-semibold flex items-center gap-1"
                           title="Collect cash at counter"
                         >
-                          <Coins className="w-3.5 h-3.5" /> Collect ${req.total_amount?.toFixed(2) || "0.10"}
+                          <Coins className="w-3.5 h-3.5" /> Collect ₹{req.total_amount?.toFixed(2) || "3.00"}
                         </button>
                       )}
                       {req.payment_status === "COMPLETED" && (
@@ -696,7 +696,7 @@ export const StaffDashboard: React.FC = () => {
                   Job for <strong>{unpaidPromptJob.student_name || "Student"}</strong> ({unpaidPromptJob.document_name}) has an unpaid balance of:
                 </p>
                 <div className="text-xl font-bold text-pe-text tabular-nums pt-1">
-                  ${unpaidPromptJob.total_amount ? unpaidPromptJob.total_amount.toFixed(2) : "0.10"} USD
+                  ₹{unpaidPromptJob.total_amount ? unpaidPromptJob.total_amount.toFixed(2) : "3.00"} INR
                 </div>
               </div>
             </div>

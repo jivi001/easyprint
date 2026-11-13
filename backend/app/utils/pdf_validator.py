@@ -2,7 +2,7 @@ import re
 import hashlib
 import uuid
 from pathlib import Path
-from typing import Tuple
+from typing import Tuple, Union, BinaryIO
 from app.core.exceptions import DocumentValidationError
 from app.core.config import get_settings
 
@@ -66,16 +66,54 @@ def extract_pdf_page_count(content: bytes) -> int:
     Defaults to 1 if count cannot be extracted.
     """
     try:
+        # Check /Type /Pages ... /Count N
         matches = re.findall(rb"/Type\s*/Pages.*?/Count\s+(\d+)", content, re.DOTALL)
         if matches:
             counts = [int(m) for m in matches if m.isdigit()]
             if counts:
                 return max(counts)
+        # Check reverse order: /Count N ... /Type /Pages
+        matches_rev = re.findall(rb"/Count\s+(\d+).*?/Type\s*/Pages", content, re.DOTALL)
+        if matches_rev:
+            counts_rev = [int(m) for m in matches_rev if m.isdigit()]
+            if counts_rev:
+                return max(counts_rev)
+        # Count /Type /Page objects
         page_matches = re.findall(rb"/Type\s*/Page\b", content)
         if page_matches:
             return len(page_matches)
     except Exception:
         pass
+    return 1
+
+
+def read_document_pages(document: Union[str, Path, bytes, BinaryIO]) -> int:
+    """
+    Reads the number of pages in a document.
+    Accepts:
+    - Path or string pointing to a PDF file on disk
+    - Raw bytes of a PDF document
+    - An open binary file-like stream (e.g., BytesIO or file handle)
+
+    Returns integer count of pages in the document (minimum 1).
+    """
+    if isinstance(document, bytes):
+        return extract_pdf_page_count(document)
+    if isinstance(document, (str, Path)):
+        path = Path(document)
+        if path.exists():
+            try:
+                with open(path, "rb") as f:
+                    return extract_pdf_page_count(f.read())
+            except Exception:
+                return 1
+        return 1
+    if hasattr(document, "read"):
+        try:
+            content = document.read()
+            return extract_pdf_page_count(content)
+        except Exception:
+            return 1
     return 1
 
 

@@ -5,12 +5,14 @@ from pathlib import Path
 # Add backend to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app.core.database import SessionLocal
+from app.core.database import SessionLocal, engine, Base
+import app.models  # noqa: F401
 from app.models.user import User, UserRole
 from app.core.security import hash_password
 
 
 def seed():
+    Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     try:
         accounts = [
